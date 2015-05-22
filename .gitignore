@@ -17,6 +17,8 @@ bld/
 [Bb]in/
 [Oo]bj/
 
+*.pyc
+
 # Roslyn cache directories
 *.ide/
 

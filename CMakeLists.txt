@@ -17,8 +17,23 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # Useful for displaying errors, warnings, and debugging
 message ("cxx Flags: " ${CMAKE_CXX_FLAGS})
 
-include_directories("deps")
-find_library(LIBUSB_LIBRARY libusb-1.0 deps/)
+if(WIN32)
+  include_directories("deps")
+  find_library(LIBUSB_LIBRARY libusb-1.0 deps/)
+elseif(UNIX)
+  set(CMAKE_CXX_FLAGS "-std=c++11")
+  include_directories("/usr/include/libusb-1.0")
+  find_library(LIBUSB_LIBRARY
+    NAMES
+    usb-1.0 usb
+    PATHS
+    /usr/lib
+    /usr/lib/x86_64-linux-gnu
+    /usr/local/lib
+    /opt/local/lib
+    /sw/lib
+    )
+endif(WIN32)
 
 # Sub-directories where more CMakeLists.txt exist
 add_subdirectory(src)

@@ -5,6 +5,13 @@
 #include <thread>
 #include <libusb.h>
 #include <cmath>
+#include <string.h>
+
+#if WIN32
+#define EXPORT_BIT __declspec(dllexport)
+#else
+#define EXPORT_BIT
+#endif
 
 typedef struct {
 	unsigned char data[64];
@@ -112,23 +119,23 @@ public:
 };
 
 extern "C" {
-	__declspec(dllexport) PeachyUsb *peachyusb_init(uint32_t capacity) {
+	EXPORT_BIT PeachyUsb *peachyusb_init(uint32_t capacity) {
 		PeachyUsb* ctx = new PeachyUsb(capacity);
 		ctx->start();
 		return ctx;
 	}
 
-	__declspec(dllexport) int peachyusb_read(PeachyUsb* ctx, unsigned char* buf, uint32_t length) {
+	EXPORT_BIT int peachyusb_read(PeachyUsb* ctx, unsigned char* buf, uint32_t length) {
 		int transferred;
 		ctx->read(buf, length, &transferred);
 		return transferred;
 	}
 
-	__declspec(dllexport) void peachyusb_write(PeachyUsb* ctx, unsigned char* buf, uint32_t length) {
+	EXPORT_BIT void peachyusb_write(PeachyUsb* ctx, unsigned char* buf, uint32_t length) {
 		ctx->write(buf, length);
 	}
 
-	__declspec(dllexport) void peachyusb_shutdown(PeachyUsb* ctx) {
+	EXPORT_BIT void peachyusb_shutdown(PeachyUsb* ctx) {
 		delete ctx;
 	}
 }

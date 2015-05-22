@@ -30,7 +30,7 @@ class PeachyUSB(object):
         self.context = lib.peachyusb_init(capacity)
 
     def __del__(self):
-        print "in destructor"
+        lib.peachyusb_shutdown(self.context)
         self.context = None
 
     def write(self, buf):

@@ -18,6 +18,8 @@ typedef struct {
   uint32_t length;
 } packet_t;
 
+typedef void (*callback_t)(unsigned char*, uint32_t);
+
 class PeachyUsb;
 
 
@@ -27,7 +29,8 @@ private:
   std::condition_variable read_avail;
   std::mutex mtx;
   std::thread usb_writer;
-
+  std::thread usb_reader;
+  
   bool run_writer;
   uint32_t write_r_index; // index to read from
   uint32_t write_count; // number of packets ready to read (written and unread)
@@ -36,7 +39,8 @@ private:
 
   libusb_context* usb_context;
   libusb_device_handle* usb_handle;
-
+  callback_t read_callback;
+  
 public:
   static void writer_func(PeachyUsb* ctx) {
     unsigned char buf[64] = { 0 };
@@ -56,7 +60,19 @@ public:
     ctx->usb_context = NULL;
   }
 
-
+  static void reader_func(PeachyUsb* ctx) {
+    unsigned char buf[64] = { 0 };
+    int packet_size = 64;
+    int transferred;
+    
+    while (ctx->run_writer) {
+      transferred = 0;
+      int res = libusb_bulk_transfer(ctx->usb_handle, 0x83, buf, packet_size, &transferred, 2000);
+      if (ctx->read_callback && transferred) {
+	ctx->read_callback(buf, transferred);
+      }
+    }
+  }
   
   PeachyUsb(uint32_t buffer_size) {
     this->write_capacity = buffer_size;
@@ -80,6 +96,7 @@ public:
 
     this->run_writer = true;
     this->usb_writer = std::thread(writer_func, this);
+    this->usb_reader = std::thread(reader_func, this);
   }
 
   void get_from_write_queue(unsigned char* buf, int length, int* transferred) {
@@ -111,12 +128,8 @@ public:
     this->read_avail.notify_one();
   }
 
-  void read(unsigned char* buf, int length, int* transferred) {
-    *transferred = 0;
-    if (!this->usb_handle) { 
-      return; 
-    }
-    libusb_bulk_transfer(this->usb_handle, 0x83, buf, length, transferred, 2000);
+  void set_read_callback(callback_t callback) {
+    this->read_callback = callback;
   }
 };
 
@@ -127,12 +140,10 @@ extern "C" {
     return ctx;
   }
 
-  EXPORT_BIT int peachyusb_read(PeachyUsb* ctx, unsigned char* buf, uint32_t length) {
-    int transferred;
-    ctx->read(buf, length, &transferred);
-    return transferred;
+  EXPORT_BIT void peachyusb_set_read_callback(PeachyUsb* ctx, callback_t callback) {
+    ctx->set_read_callback(callback);
   }
-
+  
   EXPORT_BIT void peachyusb_write(PeachyUsb* ctx, unsigned char* buf, uint32_t length) {
     ctx->write(buf, length);
   }

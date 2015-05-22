@@ -7,7 +7,10 @@ class peachyusb_t(ctypes.Structure):
 peachyusb_t_p = ctypes.POINTER(peachyusb_t)
 
 def _loadLibrary():
-    dll = ctypes.CDLL("PeachyUSB.dll")
+    try:
+        dll = ctypes.CDLL("PeachyUSB.dll")
+    except (OSError,), e:
+        dll = ctypes.CDLL("./libPeachyUSB.so")
     dll.peachyusb_init.argtypes = [ctypes.c_uint]
     dll.peachyusb_init.restype = peachyusb_t_p
     

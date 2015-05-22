@@ -5,6 +5,13 @@ import time
 p = peachyusb.PeachyUSB(500)
 count = int(1e7)
 
+def read(buf, length):
+    print "Got %d bytes from usb: %r" % (length, buf)
+
+p.set_read_callback(read)
+
+p.write("\x07")
+
 def worker():
     while True:
         s = 0
@@ -29,6 +36,7 @@ def writer():
     print "Done Writing"
 
 t2 = threading.Thread(target=writer)
+t2.daemon = True
 t2.start()
 
 # for x in xrange(2):
@@ -36,4 +44,5 @@ t2.start()
 #     t.start()
 
 #t1.join()
-t2.join()
+while t2.is_alive():
+    t2.join(1)

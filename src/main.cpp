@@ -97,6 +97,7 @@ public:
     this->run_writer = true;
     this->usb_writer = std::thread(writer_func, this);
     this->usb_reader = std::thread(reader_func, this);
+    return 0;
   }
 
   void get_from_write_queue(unsigned char* buf, int length, int* transferred) {

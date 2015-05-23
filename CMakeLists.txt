@@ -22,7 +22,7 @@ if(WIN32)
   find_library(LIBUSB_LIBRARY libusb-1.0 deps/)
 elseif(UNIX)
   set(CMAKE_CXX_FLAGS "-std=c++11")
-  include_directories("/usr/include/libusb-1.0")
+  include_directories("/usr/include/libusb-1.0" "/usr/local/include/libusb-1.0")
   find_library(LIBUSB_LIBRARY
     NAMES
     usb-1.0 usb

@@ -5,6 +5,7 @@
 #include <thread>
 #include <libusb.h>
 #include <cmath>
+#include <set>
 #include <string.h>
 
 #if WIN32
@@ -13,23 +14,34 @@
 #define EXPORT_BIT
 #endif
 
+class PeachyUsb;
+
 typedef struct {
   unsigned char data[64];
   uint32_t length;
 } packet_t;
 
 typedef void (*callback_t)(unsigned char*, uint32_t);
-
-class PeachyUsb;
-
+typedef struct {
+  PeachyUsb* ctx;
+  uint32_t packet_id;
+} writer_callback_data_t;
 
 class PeachyUsb {
 private:
   std::condition_variable write_avail;
   std::condition_variable read_avail;
   std::mutex mtx;
+
+  std::condition_variable async_room_avail;
+  std::mutex inflight_mtx;
+
   std::thread usb_writer;
   std::thread usb_reader;
+
+  std::set<int> inflight;
+  uint32_t max_inflight;
+  uint32_t packet_counter; // perpetually incrementing packet id
   
   bool run_writer;
   uint32_t write_r_index; // index to read from
@@ -42,17 +54,36 @@ private:
   callback_t read_callback;
   
 public:
+  static void LIBUSB_CALL write_complete_callback(struct libusb_transfer* transfer) {
+    writer_callback_data_t* callback_data = (writer_callback_data_t*)transfer->user_data;
+    PeachyUsb* ctx = callback_data->ctx;
+    uint32_t packet_id = callback_data->packet_id;
+    delete callback_data;
+
+    // TODO do some error handling here
+    
+    ctx->remove_inflight_id(packet_id);
+    libusb_free_transfer(transfer);
+  }
+  
   static void writer_func(PeachyUsb* ctx) {
     unsigned char buf[64] = { 0 };
     int packet_size;
-    int transferred;
-
+    writer_callback_data_t* callback_data;
+    
     while (ctx->run_writer) {
+      struct libusb_transfer* transfer = libusb_alloc_transfer(0);
       ctx->get_from_write_queue(buf, 64, &packet_size);
-      int res = libusb_bulk_transfer(ctx->usb_handle, 2, buf, packet_size, &transferred, 2000);
-      if (res != 0) {
-	printf("libusb error %d: %s\n", res, libusb_error_name(res));
-      }
+
+      int packet_id = ctx->get_next_inflight_id();
+
+      callback_data = new writer_callback_data_t();
+      callback_data->ctx = ctx;
+      callback_data->packet_id = packet_id;
+      
+      libusb_fill_bulk_transfer(transfer, ctx->usb_handle, 2, buf, packet_size, write_complete_callback, (void*)callback_data, 2000);
+      
+      
     }
     libusb_release_interface(ctx->usb_handle, 0);
     libusb_exit(ctx->usb_context);
@@ -79,6 +110,7 @@ public:
     this->write_r_index = 0;
     this->write_count = 0;
     this->write_packets = (packet_t*)malloc(sizeof(packet_t) * buffer_size);
+    this->max_inflight = 40; // 40 ~= 20 milliseconds worth of packets
   }
   ~PeachyUsb() {
     if (this->usb_context) {
@@ -97,15 +129,16 @@ public:
     this->run_writer = true;
     this->usb_writer = std::thread(writer_func, this);
     this->usb_reader = std::thread(reader_func, this);
+    return 0;
   }
 
-  void get_from_write_queue(unsigned char* buf, int length, int* transferred) {
+  void get_from_write_queue(unsigned char* buf, uint32_t length, int* transferred) {
     std::unique_lock<std::mutex> lck(mtx);
     while (this->write_count == 0) {
       read_avail.wait(lck);
     }
     packet_t* pkt = &this->write_packets[this->write_r_index];
-    int read_count = (pkt->length > length ? length : pkt->length);
+    uint32_t read_count = (pkt->length > length ? length : pkt->length);
     memcpy(buf, pkt->data, read_count);
     *transferred = read_count;
     this->write_count--;
@@ -130,6 +163,24 @@ public:
 
   void set_read_callback(callback_t callback) {
     this->read_callback = callback;
+  }
+
+private:
+  uint32_t get_next_inflight_id(void) {
+    uint32_t inflight_id;
+    std::unique_lock<std::mutex> lock(this->inflight_mtx);
+    while (this->inflight.size() >= this->max_inflight) {
+      this->async_room_avail.wait(lock);
+    }
+    this->inflight.insert(this->packet_counter);
+    inflight_id = packet_counter;
+    packet_counter++;
+    return inflight_id;
+  }
+  void remove_inflight_id(uint32_t inflight_id) {
+    std::unique_lock<std::mutex> lock(this->inflight_mtx);
+    this->inflight.erase(inflight_id);
+    this->async_room_avail.notify_one();
   }
 };
 

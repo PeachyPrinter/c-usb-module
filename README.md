@@ -24,6 +24,8 @@ You want to make sure to do a Release build instead of a Debug build;
 if you do a debug build, people that don't have Visual Studio
 installed will not be able to load your DLL.
 
+If you need a 64-bit binary, try 'Visual Studio 12 2013 Win64'
+
 # Getting Started on Linux
 
 This should work with a standard toolchain on Ubuntu 14.04. You'll need to make sure that `libusb-1.0-0-dev` and `cmake` are installed.

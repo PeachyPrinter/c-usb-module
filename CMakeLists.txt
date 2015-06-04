@@ -39,5 +39,6 @@ elseif(UNIX)
     )
 endif(WIN32)
 
+include_directories(inc)
 # Sub-directories where more CMakeLists.txt exist
 add_subdirectory(src)

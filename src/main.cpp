@@ -16,6 +16,22 @@
 
 class PeachyUsb;
 
+/* States for PeachyUSB object 
+- uninitialized (new!)
+- device not found
+- device active
+- device removed
+- shutting down
+*/
+
+typedef enum {
+	UNINITIALIZED = 1,
+	NOT_FOUND = 2,
+	ACTIVE = 3,
+	REMOVED = 4,
+	SHUTTING_DOWN = 5
+} usb_state_t;
+
 typedef struct {
   unsigned char data[64];
   uint32_t length;
@@ -29,6 +45,7 @@ typedef struct {
 
 class PeachyUsb {
 private:
+	usb_state_t state = UNINITIALIZED;
   std::condition_variable write_avail;
   std::condition_variable read_avail;
   std::mutex mtx;
@@ -119,9 +136,14 @@ public:
     this->usb_writer.join();
   }
   int start() {
+    if (this->state != UNINITIALIZED) {
+      return;
+    }
+
     libusb_init(&this->usb_context);
     this->usb_handle = libusb_open_device_with_vid_pid(this->usb_context, 0x16d0, 0x0af3);
     if (this->usb_handle == NULL) {
+      this->state = NOT_FOUND;
       return -1;
     }
     libusb_claim_interface(this->usb_handle, 0);

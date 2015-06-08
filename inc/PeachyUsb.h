@@ -24,7 +24,7 @@ public:
 	~UsbWriter();
 	int write(const unsigned char* buf, uint32_t length);
 private:
-	bool run_writer;
+	volatile bool run_writer;
 	libusb_device_handle* usb_handle;
 
 	uint32_t write_r_index; // index to read from
@@ -57,6 +57,12 @@ public:
 	UsbReader(libusb_device_handle* dev);
 	~UsbReader();
 	void set_read_callback(usb_callback_t callback);
+private:
+	libusb_device_handle* usb_handle;
+	std::thread reader;
+	volatile bool run_reader;
+	usb_callback_t read_callback;
+	static void reader_func(UsbReader* ctx);
 };
 
 class PeachyUsb {

@@ -44,10 +44,14 @@ UsbWriter::UsbWriter(uint32_t capacity, libusb_device_handle* dev) {
 	this->write_packets = (packet_t*)malloc(sizeof(packet_t) * capacity);
 	this->max_inflight = 40; // 40 ~= 20 milliseconds worth of packets
 
+	this->run_writer = true;
 	this->writer = std::thread(writer_func, this);
 }
 UsbWriter::~UsbWriter() {
-
+	this->run_writer = false;
+	if (this->writer.joinable()) {
+		this->writer.join();
+	}
 }
 
 

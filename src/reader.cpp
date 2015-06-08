@@ -1,4 +1,4 @@
-static void reader_func(PeachyUsb* ctx) {
+/*static void reader_func(PeachyUsb* ctx) {
   unsigned char buf[64] = { 0 };
   int packet_size = 64;
   int transferred;
@@ -12,3 +12,4 @@ static void reader_func(PeachyUsb* ctx) {
   }
 }
 
+*/

@@ -1,5 +1,20 @@
 #include <stdint.h>
 #include <libusb.h>
+#include "PeachyUsb.h"
+#include <condition_variable>
+#include <mutex>
+
+typedef struct {
+	unsigned char data[64];
+	uint32_t length;
+} packet_t;
+
+class UsbWriter;
+
+typedef struct {
+	UsbWriter* ctx;
+	uint32_t packet_id;
+} writer_callback_data_t;
 
 class UsbWriter {
   uint32_t write_r_index; // index to read from
@@ -7,6 +22,16 @@ class UsbWriter {
   uint32_t write_capacity; // total capacity
   packet_t* write_packets;
 
+  std::set<int> inflight;
+  uint32_t max_inflight;
+  uint32_t packet_counter; // perpetually incrementing packet id
+
+  std::condition_variable room_avail;
+  std::condition_variable data_avail;
+  std::mutex mtx;
+
+  std::condition_variable inflight_room_avail;
+  std::mutex inflight_mtx;
 public:
   UsbWriter(uint32_t capacity, libusb_device_handle* dev) {
     this->write_capacity = buffer_size;
@@ -14,6 +39,8 @@ public:
     this->write_count = 0;
     this->write_packets = (packet_t*)malloc(sizeof(packet_t) * buffer_size);
     this->max_inflight = 40; // 40 ~= 20 milliseconds worth of packets
+  }
+  ~UsbWriter() {
 
   }
 private:

@@ -7,6 +7,9 @@
 #include <cmath>
 #include <set>
 #include <string.h>
+#include <memory>
+
+#include "PeachyUsb.h"
 
 #if WIN32
 #define EXPORT_BIT __declspec(dllexport)
@@ -24,39 +27,14 @@ class PeachyUsb;
 - shutting down
 */
 
-typedef struct {
-  unsigned char data[64];
-  uint32_t length;
-} packet_t;
-
-typedef void (*callback_t)(unsigned char*, uint32_t);
-typedef struct {
-  PeachyUsb* ctx;
-  uint32_t packet_id;
-} writer_callback_data_t;
 
 class PeachyUsb {
 private:
-  std::condition_variable write_avail;
-  std::condition_variable read_avail;
-  std::mutex mtx;
-
-  std::condition_variable async_room_avail;
-  std::mutex inflight_mtx;
-
-  std::thread usb_writer;
-  std::thread usb_reader;
-
-  std::set<int> inflight;
-  uint32_t max_inflight;
-  uint32_t packet_counter; // perpetually incrementing packet id
-  
-  bool run_writer;
-
   libusb_context* usb_context;
-  libusb_device_handle* usb_handle;
-  callback_t read_callback;
-  
+  libusb_device_handle* usb_handle;  
+  std::unique_ptr<UsbReader> reader;
+  std::unique_ptr<UsbWriter> writer;
+
 public:
 
   PeachyUsb(uint32_t buffer_size) {
@@ -68,41 +46,39 @@ public:
     if (libusb_claim_interface(this->usb_handle, 0) != 0) {
       throw std::runtime_error("Failed to claim interface");
     }
-
+	this->reader = std::unique_ptr<UsbReader>(new UsbReader(this->usb_handle));
+	this->writer = std::unique_ptr<UsbWriter>(new UsbWriter(buffer_size, this->usb_handle));
   }
   ~PeachyUsb() {
-    if (this->usb_context) {
-      this->run_writer = false;
-    }
-    this->usb_writer.join();
+	  this->reader.reset();
+	  this->writer.reset();
+	  if (this->usb_handle) {
+		  libusb_release_interface(this->usb_handle, 0);
+	  }
+	  libusb_exit(this->usb_context);
   }
-  int start() {
-    if (this->state != UNINITIALIZED) {
-      return;
-    }
-
-    this->run_writer = true;
-    this->usb_writer = std::thread(writer_func, this);
-    this->usb_reader = std::thread(reader_func, this);
-    return 0;
+  
+  void set_read_callback(usb_callback_t callback) {
+	  this->reader->set_read_callback(callback);
   }
 
-
-  void set_read_callback(callback_t callback) {
-    this->read_callback = callback;
+  int write(const unsigned char* buf, uint32_t length) {
+	  return this->writer->write(buf, length);
   }
-
-private:
 };
 
 extern "C" {
   EXPORT_BIT PeachyUsb *peachyusb_init(uint32_t capacity) {
-    PeachyUsb* ctx = new PeachyUsb(capacity);
-    ctx->start();
-    return ctx;
+	  try {
+		  PeachyUsb* ctx = new PeachyUsb(capacity);
+		  return ctx;
+	  }
+	  catch (std::runtime_error e) {
+		  return NULL;
+	  }	  
   }
 
-  EXPORT_BIT void peachyusb_set_read_callback(PeachyUsb* ctx, callback_t callback) {
+  EXPORT_BIT void peachyusb_set_read_callback(PeachyUsb* ctx, usb_callback_t callback) {
     ctx->set_read_callback(callback);
   }
   

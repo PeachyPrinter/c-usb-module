@@ -1,4 +1,4 @@
-
+// -*- mode: c++; tab-width: 4 -*-
 #include "PeachyUsb.h"
 
 #if WIN32

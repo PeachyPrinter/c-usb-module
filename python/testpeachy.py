@@ -3,6 +3,7 @@ import peachyusb
 import time
 
 p = peachyusb.PeachyUSB(500)
+print p.context
 count = int(1e7)
 
 def read(buf, length):

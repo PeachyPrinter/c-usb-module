@@ -1,3 +1,5 @@
+// -*- mode: c++; tab-width: 4 -*-
+
 #include <stdint.h>
 #include <libusb.h>
 #include "PeachyUsb.h"
@@ -26,7 +28,7 @@ void UsbWriter::writer_func(UsbWriter* ctx) {
 		if (packet_size == 0) {
 			continue;
 		}
-
+        printf("Dequeued %d bytes\n", packet_size);
 		int packet_id = ctx->get_next_inflight_id();
 
 		callback_data = new writer_callback_data_t();
@@ -34,6 +36,7 @@ void UsbWriter::writer_func(UsbWriter* ctx) {
 		callback_data->packet_id = packet_id;
 
 		libusb_fill_bulk_transfer(transfer, ctx->usb_handle, 2, buf, packet_size, write_complete_callback, (void*)callback_data, 2000);
+        libusb_submit_transfer(transfer);
 	}
 }
 

@@ -28,6 +28,7 @@ PeachyUsb::PeachyUsb(uint32_t buffer_size) {
 	this->writer = std::unique_ptr<UsbWriter>(new UsbWriter(buffer_size, this->usb_handle));
 }
 PeachyUsb::~PeachyUsb() {
+  printf("PeachyUsb deconstructor\n");
 	this->reader.reset();
 	this->writer.reset();
 	if (this->usb_handle) {

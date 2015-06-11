@@ -40,7 +40,7 @@ void UsbWriter::writer_func(UsbWriter* ctx) {
 
         printf("Callback data initialized %p %d\n", callback_data->ctx, callback_data->packet_id);
         printf("Fill with %d bytes\n", packet_size);
-		libusb_fill_bulk_transfer(transfer, ctx->usb_handle, 0x02, buf, packet_size, write_complete_callback, (void*)callback_data, 2000);
+        libusb_fill_bulk_transfer(transfer, ctx->usb_handle, 2, buf, packet_size, write_complete_callback, (void*)callback_data, 2000);
         printf("Fill bulk transfer worked\n");
         int res = libusb_submit_transfer(transfer);
         printf("Res from submit_transfer: %d\n", res);
@@ -54,6 +54,7 @@ UsbWriter::UsbWriter(uint32_t capacity, libusb_device_handle* dev) {
 	this->write_count = 0;
 	this->write_packets = (packet_t*)malloc(sizeof(packet_t) * capacity);
 	this->max_inflight = 40; // 40 ~= 20 milliseconds worth of packets
+    this->usb_handle = dev;
 
 	this->run_writer = true;
 	this->writer = std::thread(writer_func, this);

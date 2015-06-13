@@ -25,6 +25,9 @@ def _loadLibrary():
 
 lib = _loadLibrary()
 
+class PeachyUSBException(Exception):
+    pass
+
 class PeachyUSB(object):
     def __init__(self, capacity):
         self.context = lib.peachyusb_init(capacity)

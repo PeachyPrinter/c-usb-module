@@ -60,6 +60,7 @@ UsbWriter::UsbWriter(uint32_t capacity, libusb_device_handle* dev) {
 UsbWriter::~UsbWriter() {
 	this->run_writer = false;
 	if (this->writer.joinable()) {
+        this->write((unsigned char*)"", 0); // write a 0 byte packet to ensure the writer breaks
 		this->writer.join();
 	}
 }

@@ -33,6 +33,7 @@ PeachyUsb::~PeachyUsb() {
 	if (this->usb_handle) {
 		libusb_release_interface(this->usb_handle, 0);
 	}
+	libusb_close(this->usb_handle);
 	libusb_exit(this->usb_context);
 }
 
@@ -52,6 +53,7 @@ extern "C" {
 			return ctx;
 		}
 		catch (std::runtime_error e) {
+		  fprintf(stderr, "Runtime exception creating printer: %s\n", e.what());
 			return NULL;
 		}
 	}

@@ -32,7 +32,9 @@ void UsbWriter::writer_func(UsbWriter* ctx) {
 			continue;
 		}
 		int packet_id = ctx->get_next_inflight_id();
-
+        if (packet_id == 0) {
+          continue;
+        }
 		callback_data = new writer_callback_data_t();
 		callback_data->ctx = ctx;
 		callback_data->packet_id = packet_id;
@@ -53,16 +55,28 @@ UsbWriter::UsbWriter(uint32_t capacity, libusb_device_handle* dev) {
 	this->write_packets = (packet_t*)malloc(sizeof(packet_t) * capacity);
 	this->max_inflight = 40; // 40 ~= 20 milliseconds worth of packets
     this->usb_handle = dev;
+    this->packet_counter = 1; // 0 is special
 
 	this->run_writer = true;
 	this->writer = std::thread(writer_func, this);
 }
 UsbWriter::~UsbWriter() {
 	this->run_writer = false;
+    printf("~UsbWriter()\n");
 	if (this->writer.joinable()) {
         this->write((unsigned char*)"", 0); // write a 0 byte packet to ensure the writer breaks
 		this->writer.join();
 	}
+
+    // let the writer go if it is waiting for space to transmit
+    this->inflight_room_avail.notify_all();
+
+// wait for any inflight packets to finish
+    while(this->inflight.size() > 0) {
+      printf("Waiting for %lu packets to finish\n", this->inflight.size());
+      std::unique_lock<std::mutex> lock(this->inflight_mtx);
+      this->inflight_room_avail.wait(lock);
+    }
 }
 
 
@@ -109,14 +123,20 @@ int UsbWriter::write(const unsigned char* buf, uint32_t length) {
 	return length;
 }
 uint32_t UsbWriter::get_next_inflight_id(void) {
-	uint32_t inflight_id;
 	std::unique_lock<std::mutex> lock(this->inflight_mtx);
+    if (this->packet_counter == 0) {
+      this->packet_counter = 1;
+    }
+	uint32_t inflight_id;
 	while (this->inflight.size() >= this->max_inflight) {
-		this->inflight_room_avail.wait(lock);
+      if (!this->run_writer) {
+        return 0;
+      }
+      this->inflight_room_avail.wait(lock);
 	}
 	this->inflight.insert(this->packet_counter);
 	inflight_id = packet_counter;
-	packet_counter++;
+	this->packet_counter++;
 	return inflight_id;
 }
 void UsbWriter::remove_inflight_id(uint32_t inflight_id) {

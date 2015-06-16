@@ -28,8 +28,11 @@ PeachyUsb::PeachyUsb(uint32_t buffer_size) {
 	this->writer = std::unique_ptr<UsbWriter>(new UsbWriter(buffer_size, this->usb_handle));
 }
 PeachyUsb::~PeachyUsb() {
-	this->reader.reset();
 	this->writer.reset();
+    // Kill the writer first. Once the reader is done, no more libusb
+    // callbacks get called. 
+	this->reader.reset();
+
 	if (this->usb_handle) {
 		libusb_release_interface(this->usb_handle, 0);
 	}

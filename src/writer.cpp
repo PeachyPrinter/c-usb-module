@@ -18,7 +18,7 @@ typedef struct {
 } writer_callback_data_t;
 
 void UsbWriter::writer_func(UsbWriter* ctx) {
-	unsigned char buf[64] = { 0 };
+	unsigned char buf[192] = { 0 };
 	int packet_size;
 	writer_callback_data_t* callback_data;
 
@@ -28,7 +28,7 @@ void UsbWriter::writer_func(UsbWriter* ctx) {
           printf("Failed to allocate transfer\n");
           break;
         }
-		ctx->get_from_write_queue(buf, 64, &packet_size);
+		ctx->get_from_write_queue(buf, 192, &packet_size);
 		if (packet_size == 0) {
 			continue;
 		}
@@ -96,13 +96,22 @@ void UsbWriter::get_from_write_queue(unsigned char* buf, uint32_t length, int* t
         return;
       }
 	}
-	packet_t* pkt = &this->write_packets[this->write_r_index];
-	uint32_t read_count = (pkt->length > length ? length : pkt->length);
-	memcpy(buf, pkt->data, read_count);
-	*transferred = read_count;
-	this->write_count--;
-	this->write_r_index = (this->write_r_index + 1) % this->write_capacity;
+    *transferred = 0;
+    unsigned char* dest = buf;
+    while(this->write_count) {
+      packet_t* pkt = &this->write_packets[this->write_r_index];
+      uint32_t read_count = (pkt->length > length ? length : pkt->length);
+      if ((*transferred + read_count) >= length) {
+        break;
+      }
+      memcpy(dest, pkt->data, read_count);
+      dest += read_count;
+      *transferred += read_count;
+      this->write_count--;
+      this->write_r_index = (this->write_r_index + 1) % this->write_capacity;
+    }
 	this->room_avail.notify_one();
+    
 }
 
 int UsbWriter::write(const unsigned char* buf, uint32_t length) {

@@ -7,11 +7,18 @@
 #include <mutex>
 #include <chrono>
 
-typedef struct __attribute__ ((__packed__)) _encoded_packet {
+#ifdef _MSC_VER
+#define PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
+#elif defined(__GNUC__)
+#define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+#endif
+
+PACK(
+typedef struct _encoded_packet {
   uint32_t magic;
   uint8_t data_bytes;
   uint16_t sequence;  
-} encoded_packet_t;
+}) encoded_packet_t;
 
 typedef struct usb_packet {
 	unsigned char data[64];

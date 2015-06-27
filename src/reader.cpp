@@ -8,7 +8,6 @@ UsbReader::UsbReader(libusb_device_handle* dev) {
 
 UsbReader::~UsbReader() {
 	this->run_reader = false;
-        printf("~UsbReader()\n");
 	if (this->reader.joinable()) {
 		this->reader.join();
 	}

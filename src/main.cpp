@@ -28,10 +28,12 @@ PeachyUsb::PeachyUsb(uint32_t buffer_size) {
 	this->writer = std::unique_ptr<UsbWriter>(new UsbWriter(buffer_size, this->usb_handle));
 }
 PeachyUsb::~PeachyUsb() {
-  fprintf(stderr, "PeachyUsb destructor called\n");
 	this->writer.reset();
+
+    printf("Writer finished\n");
     // Kill the writer first. Once the reader is done, no more libusb
     // callbacks get called. 
+    this->reader->set_read_callback(NULL);
 	this->reader.reset();
 
 	if (this->usb_handle) {
@@ -39,6 +41,8 @@ PeachyUsb::~PeachyUsb() {
 	}
 	libusb_close(this->usb_handle);
 	libusb_exit(this->usb_context);
+    printf("End of PeachyUsb shutdown\n");
+    fflush(stdout);
 }
 
 void PeachyUsb::set_read_callback(usb_callback_t callback) {
@@ -46,6 +50,8 @@ void PeachyUsb::set_read_callback(usb_callback_t callback) {
 }
 
 int PeachyUsb::write(const unsigned char* buf, uint32_t length) {
+  printf("PeachyUsb got a write of %d bytes\n", length);
+  fflush(stdout);
 	return this->writer->write(buf, length);
 }
 

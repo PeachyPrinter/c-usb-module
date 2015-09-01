@@ -73,8 +73,13 @@ void UsbWriter::writer_func(UsbWriter* ctx) {
 
         libusb_fill_bulk_transfer(transfer, ctx->usb_handle, 2, buf, buf_idx, write_complete_callback, (void*)callback_data, 5000);
         ctx->inflight_packets.emplace(packet_id, transfer);
+
         int res = libusb_submit_transfer(transfer);
+        printf("PeachyUsb submitted a write of %d bytes\n", buf_idx);
+        fflush(stdout);
         if (res != 0) {
+          printf("PeachyUsb write failed\n");
+          fflush(stdout);
           break;
         }
 	}

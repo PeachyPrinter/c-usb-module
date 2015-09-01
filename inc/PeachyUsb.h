@@ -65,6 +65,7 @@ private:
 	volatile bool run_reader;
 	usb_callback_t read_callback;
 	static void reader_func(UsbReader* ctx);
+    std::mutex callback_mtx;
 };
 
 class PeachyUsb {

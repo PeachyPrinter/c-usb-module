@@ -14,7 +14,8 @@ UsbReader::~UsbReader() {
 }
 
 void UsbReader::set_read_callback(usb_callback_t callback) {
-	this->read_callback = callback;
+  std::unique_lock<std::mutex> lck(this->callback_mtx);
+  this->read_callback = callback;
 }
 
 void UsbReader::reader_func(UsbReader* ctx) {
@@ -24,10 +25,17 @@ void UsbReader::reader_func(UsbReader* ctx) {
 
 	while (ctx->run_reader) {
 		transferred = 0;
+        printf("PeachyUsb submitting bulk read request\n");
+        fflush(stdout);
 		int res = libusb_bulk_transfer(ctx->usb_handle, 0x83, buf, packet_size, &transferred, 2000);
 		usb_callback_t callback = ctx->read_callback;
-		if (callback && transferred) {
+        printf("PeachyUsb bulk read transfer: %d bytes transferred, %p callback\n", transferred, callback);
+        fflush(stdout);
+        {
+          std::unique_lock<std::mutex> lck(ctx->callback_mtx);
+          if (callback && transferred) {
 			callback(buf, transferred);
-		}
+          }
+        }
 	}
 }

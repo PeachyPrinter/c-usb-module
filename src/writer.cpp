@@ -59,10 +59,12 @@ void UsbWriter::writer_func(UsbWriter* ctx) {
           seq++;
         }
         if (buf_idx == 0) {
+          libusb_free_transfer(transfer);
           continue;
         }
 		int packet_id = ctx->get_next_inflight_id();
         if (packet_id == 0) {
+          libusb_free_transfer(transfer);
           continue;
         }
 		callback_data = new writer_callback_data_t();
@@ -102,6 +104,8 @@ UsbWriter::~UsbWriter() {
       std::unique_lock<std::mutex> lock(this->inflight_mtx);
       this->inflight_room_avail.wait_for(lock, std::chrono::milliseconds(10000));
     }
+
+    free(this->write_packets);
 }
 
 

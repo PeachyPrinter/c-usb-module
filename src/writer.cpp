@@ -111,7 +111,7 @@ void LIBUSB_CALL UsbWriter::write_complete_callback(struct libusb_transfer* tran
 	uint32_t packet_id = callback_data->packet_id;
 	delete callback_data;
 
-    if(transfer->status != LIBUSB_TRANSFER_COMPLETED) {
+    if((transfer->status != LIBUSB_TRANSFER_COMPLETED) && (transfer->status != LIBUSB_TRANSFER_CANCELLED)) {
       printf("libusb error (packet %d) status: %d\n", packet_id, transfer->status);
     }
 	ctx->remove_inflight_id(packet_id);

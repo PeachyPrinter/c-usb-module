@@ -9,6 +9,7 @@
 #include <libusb.h>
 #include <cmath>
 #include <set>
+#include <map>
 #include <string.h>
 #include <memory>
 
@@ -32,7 +33,8 @@ private:
 	uint32_t write_capacity; // total capacity
 	struct usb_packet* write_packets;
 
-	std::set<int> inflight;
+  std::set<int> inflight;
+  std::map<int, struct libusb_transfer*> inflight_packets;
 	uint32_t max_inflight;
 	uint32_t packet_counter; // perpetually incrementing packet id
 

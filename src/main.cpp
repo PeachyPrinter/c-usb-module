@@ -50,9 +50,7 @@ void PeachyUsb::set_read_callback(usb_callback_t callback) {
 }
 
 int PeachyUsb::write(const unsigned char* buf, uint32_t length) {
-  printf("PeachyUsb got a write of %d bytes\n", length);
-  fflush(stdout);
-	return this->writer->write(buf, length);
+  return this->writer->write(buf, length);
 }
 
 

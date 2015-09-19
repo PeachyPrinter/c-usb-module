@@ -72,7 +72,11 @@ void UsbWriter::writer_func(UsbWriter* ctx) {
 		callback_data->packet_id = packet_id;
 
         libusb_fill_bulk_transfer(transfer, ctx->usb_handle, 2, buf, buf_idx, write_complete_callback, (void*)callback_data, 5000);
-        ctx->inflight_packets.emplace(packet_id, transfer);
+
+        {
+          std::unique_lock<std::mutex> lck(ctx->inflight_mtx);
+          ctx->inflight_packets.emplace(packet_id, transfer);
+        }
 
         int res = libusb_submit_transfer(transfer);
         fflush(stdout);
@@ -203,6 +207,6 @@ uint32_t UsbWriter::get_next_inflight_id(void) {
 void UsbWriter::remove_inflight_id(uint32_t inflight_id) {
 	std::unique_lock<std::mutex> lock(this->inflight_mtx);
 	this->inflight.erase(inflight_id);
-  this->inflight_packets.erase(inflight_id);
+    this->inflight_packets.erase(inflight_id);
 	this->inflight_room_avail.notify_one();
 }

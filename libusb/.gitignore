@@ -38,6 +38,10 @@ doc/html
 *.plg
 *.ncb
 *.opt
+!Win32/Debug/lib/libusb-1.0.lib
+!Win32/Release/lib/libusb-1.0.lib
+!x64/Debug/lib/libusb-1.0.lib
+!x64/Release/lib/libusb-1.0.lib
 Debug
 Release
 *.user

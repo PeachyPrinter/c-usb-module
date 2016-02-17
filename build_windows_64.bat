@@ -68,7 +68,7 @@ IF NOT "%ERRORLEVEL%" == "0" (
 ECHO ------------------------------------
 ECHO Moving file
 ECHO ------------------------------------
-copy src\libPeachyUSB.dll ..\win64
+copy src\Release\libPeachyUSB.dll ..\win64
 IF NOT "%ERRORLEVEL%" == "0" (
     ECHO "FAILED moving files"
     EXIT /B 798

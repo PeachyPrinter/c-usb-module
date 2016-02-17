@@ -35,7 +35,7 @@ elseif(UNIX)
   include_directories("/usr/include/libusb-1.0" "/usr/local/include/libusb-1.0")
   find_library(LIBUSB_LIBRARY
     NAMES
-    usb-1.0 usb
+    libusb-1.0.a libusb.a
     PATHS
     /usr/lib
     /usr/lib/x86_64-linux-gnu
@@ -43,6 +43,8 @@ elseif(UNIX)
     /opt/local/lib
     /sw/lib
     )
+  find_library(COREFOUNDATION_LIBRARY CoreFoundation)
+  find_library(IOKIT_LIBRARY IOKit)
 endif(WIN32)
 
 include_directories(inc)

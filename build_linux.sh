@@ -82,6 +82,6 @@ function build_so () {
   fi
 }
 
-clean_workspace()
-find_version_number()
-build_so()
+clean_workspace
+find_version_number
+build_so

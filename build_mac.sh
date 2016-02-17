@@ -61,9 +61,9 @@ function build_so () {
   echo "Build so"
   echo "------------------------------------"
 
-  mkdir linux64
+  mkdir mac
   if [ $? != 0 ]; then
-    echo "${FRED}FAILURE: making directory _build${RS}"
+    echo "${FRED}FAILURE: making directory mac${RS}"
     exit 101
   fi
   mkdir _build
@@ -82,9 +82,9 @@ function build_so () {
     echo "${FRED}FAILURE: make${RS}"
     exit 103
   fi
-  cp src/libPeachyUSB.so ../linux64
+  cp src/libPeachyUSB.dylib ../mac
   if [ $? != 0 ]; then
-    echo "${FRED}FAILURE: cp src/libPeachyUSB.so ..${RS}"
+    echo "${FRED}FAILURE: cp src/libPeachyUSB.dylib ../mac${RS}"
     exit 104
   fi
 }

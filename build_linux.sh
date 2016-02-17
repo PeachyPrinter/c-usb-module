@@ -7,6 +7,7 @@ function clean_workspace ()
   echo "------------------------------------"
 
   rm -rf _build
+  rm -rf linux64
   rm -rf *.so
   rm -f version.properties 
   echo -e "${FGRN}Complete${RS}"
@@ -52,6 +53,7 @@ function find_version_number ()
   echo "# THIS IS A GENERATED FILE " > version.properties
   echo "version='$VERSION'" >> version.properties
   echo "revision='$GIT_REV'" >> version.properties
+  echo "#define PEACHY_USB_VERSION \"$VERSION\"" > inc/version.h
   echo "Git Revision Number is $GIT_REV_COUNT"
   echo ""
 }
@@ -63,7 +65,7 @@ function build_so () {
 
   mkdir linux64
   if [ $? != 0 ]; then
-    echo "${FRED}FAILURE: making directory _build${RS}"
+    echo "${FRED}FAILURE: making directory linux64${RS}"
     exit 101
   fi
   mkdir _build
@@ -72,7 +74,7 @@ function build_so () {
     exit 101
   fi
   cd _build
-  cmake ..
+  cmake .. -DCMAKE_BUILD_TYPE=Release
   if [ $? != 0 ]; then
     echo "${FRED}FAILURE: cmake ..${RS}"
     exit 102

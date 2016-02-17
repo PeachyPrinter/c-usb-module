@@ -32,6 +32,7 @@ ECHO Version: %VERSION%
 ECHO # THIS IS A GENERATED FILE  > version.properties
 ECHO version='%VERSION%' >> version.properties
 ECHO revision='%GIT_REV%' >> version.properties
+ECHO #define PEACHY_USB_VERSION "%VERSION%" > inc/version.h
 ECHO Git Revision Number is %GIT_REV_COUNT%
 
 

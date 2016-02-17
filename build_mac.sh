@@ -52,6 +52,7 @@ function find_version_number ()
   echo "# THIS IS A GENERATED FILE " > version.properties
   echo "version='$VERSION'" >> version.properties
   echo "revision='$GIT_REV'" >> version.properties
+  echo "#define PEACHY_USB_VERSION \"$VERSION\"" > inc/version.h
   echo "Git Revision Number is $GIT_REV_COUNT"
   echo ""
 }
@@ -72,7 +73,7 @@ function build_so () {
     exit 101
   fi
   cd _build
-  cmake ..
+  cmake .. -DCMAKE_BUILD_TYPE=Release
   if [ $? != 0 ]; then
     echo "${FRED}FAILURE: cmake ..${RS}"
     exit 102

@@ -1,5 +1,6 @@
 // -*- mode: c++; tab-width: 4 -*-
 #include "PeachyUsb.h"
+#include "version.h"
 
 #if WIN32
 #define EXPORT_BIT __declspec(dllexport)
@@ -64,6 +65,10 @@ extern "C" {
 		  fprintf(stderr, "Runtime exception creating printer: %s\n", e.what());
 			return NULL;
 		}
+	}
+
+	EXPORT_BIT const char * peachyusb_version() {
+		return PEACHY_USB_VERSION;
 	}
 
 	EXPORT_BIT void peachyusb_set_read_callback(PeachyUsb* ctx, usb_callback_t callback) {

@@ -9,4 +9,4 @@ endif(WIN32)
 
 add_library ( ${LIBNAME} SHARED main.cpp reader.cpp writer.cpp interface.cpp)
 GENERATE_EXPORT_HEADER ( ${LIBNAME} )
-target_link_libraries (${LIBNAME} ${LIBUSB_LIBRARY})
+target_link_libraries (${LIBNAME} ${LIBUSB_LIBRARY} ${EXTRA_LIBS})

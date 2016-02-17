@@ -53,7 +53,7 @@ elseif(UNIX)
   include_directories("/usr/include/libusb-1.0" "/usr/local/include/libusb-1.0")
   find_library(LIBUSB_LIBRARY
     NAMES
-    libusb-1.0.a libusb.a
+    usb-1.0 usb
     PATHS
     /usr/lib
     /usr/lib/x86_64-linux-gnu

@@ -31,7 +31,7 @@ PeachyUsb::PeachyUsb(uint32_t buffer_size) {
 PeachyUsb::~PeachyUsb() {
 	this->writer.reset();
 
-    printf("Writer finished\n");
+    // printf("Writer finished\n");
     // Kill the writer first. Once the reader is done, no more libusb
     // callbacks get called. 
     this->reader->set_read_callback(NULL);
@@ -42,7 +42,7 @@ PeachyUsb::~PeachyUsb() {
 	}
 	libusb_close(this->usb_handle);
 	libusb_exit(this->usb_context);
-    printf("End of PeachyUsb shutdown\n");
+    // printf("End of PeachyUsb shutdown\n");
     fflush(stdout);
 }
 
